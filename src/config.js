@@ -1,48 +1,55 @@
 /**
- * Resolves and normalizes CLI options into a config object.
+ * config.js - resolve and merge envdiff configuration
  */
 
-const VALID_FORMATS = ['text', 'json'];
+const path = require('path');
+const fs = require('fs');
+
+const CONFIG_FILENAMES = ['envdiff.config.js', 'envdiff.config.json', '.envdiffrc'];
+
+const DEFAULTS = {
+  files: [],
+  ignore: [],
+  strict: false,
+  reporter: 'text',
+};
 
 /**
- * @param {object} options - raw options from commander
- * @returns {object} normalized config
+ * Search for a config file starting from cwd
+ * @param {string} cwd
+ * @returns {object|null}
  */
-function resolveConfig(options = {}) {
-  const format = VALID_FORMATS.includes(options.format) ? options.format : 'text';
-
-  const ignoreKeys = options.ignore
-    ? options.ignore.split(',').map(k => k.trim()).filter(Boolean)
-    : [];
-
-  const strict = Boolean(options.strict);
-
-  return {
-    format,
-    ignoreKeys,
-    strict,
-  };
+function resolveConfig(cwd = process.cwd()) {
+  for (const name of CONFIG_FILENAMES) {
+    const filePath = path.join(cwd, name);
+    if (fs.existsSync(filePath)) {
+      try {
+        const raw = fs.readFileSync(filePath, 'utf8');
+        const parsed = name.endsWith('.js') ? require(filePath) : JSON.parse(raw);
+        return mergeConfig(parsed);
+      } catch (e) {
+        throw new Error(`Failed to parse config file ${filePath}: ${e.message}`);
+      }
+    }
+  }
+  return mergeConfig({});
 }
 
 /**
- * Merges a config file (e.g. envdiff.config.json) with CLI options.
- * CLI options take precedence.
- * @param {object} fileConfig
- * @param {object} cliOptions
+ * Merge user config with defaults
+ * @param {object} userConfig
  * @returns {object}
  */
-function mergeConfig(fileConfig = {}, cliOptions = {}) {
-  const base = {
-    format: fileConfig.format || 'text',
-    ignoreKeys: fileConfig.ignoreKeys || [],
-    strict: fileConfig.strict || false,
+function mergeConfig(userConfig = {}) {
+  return {
+    ...DEFAULTS,
+    ...userConfig,
+    ignore: [
+      ...(DEFAULTS.ignore || []),
+      ...(userConfig.ignore || []),
+    ],
+    files: userConfig.files || DEFAULTS.files,
   };
-
-  return resolveConfig({
-    format: cliOptions.format || base.format,
-    ignore: cliOptions.ignore || base.ignoreKeys.join(','),
-    strict: cliOptions.strict !== undefined ? cliOptions.strict : base.strict,
-  });
 }
 
-module.exports = { resolveConfig, mergeConfig };
+module.exports = { resolveConfig, mergeConfig, DEFAULTS, CONFIG_FILENAMES };
