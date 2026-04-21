@@ -23,6 +23,11 @@ describe('resolveConfig', () => {
     expect(config.format).toBe('json');
   });
 
+  it('accepts table format', () => {
+    const config = resolveConfig({ format: 'table' });
+    expect(config.format).toBe('table');
+  });
+
   it('sets strict mode', () => {
     const config = resolveConfig({ strict: true });
     expect(config.strict).toBe(true);
@@ -31,6 +36,11 @@ describe('resolveConfig', () => {
   it('filters out empty keys from ignore list', () => {
     const config = resolveConfig({ ignore: 'KEY1,,KEY2,' });
     expect(config.ignoreKeys).toEqual(['KEY1', 'KEY2']);
+  });
+
+  it('trims whitespace from ignore keys', () => {
+    const config = resolveConfig({ ignore: '  KEY1 , KEY2  ,  KEY3' });
+    expect(config.ignoreKeys).toEqual(['KEY1', 'KEY2', 'KEY3']);
   });
 });
 
@@ -54,5 +64,10 @@ describe('mergeConfig', () => {
   it('handles empty file config', () => {
     const config = mergeConfig({}, { format: 'json' });
     expect(config.format).toBe('json');
+  });
+
+  it('preserves file ignoreKeys when no CLI ignore provided', () => {
+    const config = mergeConfig({ ignoreKeys: ['FOO', 'BAR'] }, { format: 'json' });
+    expect(config.ignoreKeys).toEqual(['FOO', 'BAR']);
   });
 });
