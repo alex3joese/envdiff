@@ -50,4 +50,17 @@ function getIssues(results) {
   return results.filter(r => r.status !== 'ok');
 }
 
-module.exports = { compareEnvs, getIssues };
+/**
+ * Returns a summary count of each status type across all results
+ * @param {Array<{ key: string, status: string, details: Record<string, string|null> }>} results
+ * @returns {Record<string, number>}
+ */
+function getSummary(results) {
+  const summary = {};
+  for (const { status } of results) {
+    summary[status] = (summary[status] ?? 0) + 1;
+  }
+  return summary;
+}
+
+module.exports = { compareEnvs, getIssues, getSummary };
