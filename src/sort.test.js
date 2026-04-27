@@ -23,6 +23,12 @@ describe('sortEnvMap', () => {
     const result = sortEnvMap({ B: 'bee', A: 'ay' });
     expect(result).toEqual({ A: 'ay', B: 'bee' });
   });
+
+  test('handles keys that are already sorted', () => {
+    const input = { A: '1', B: '2', C: '3' };
+    const result = sortEnvMap(input);
+    expect(Object.keys(result)).toEqual(['A', 'B', 'C']);
+  });
 });
 
 describe('buildSortedContent', () => {
@@ -33,6 +39,11 @@ describe('buildSortedContent', () => {
 
   test('handles empty map', () => {
     expect(buildSortedContent({})).toBe('\n');
+  });
+
+  test('handles values containing equals signs', () => {
+    const content = buildSortedContent({ URL: 'http://x.com?a=1&b=2' });
+    expect(content).toBe('URL=http://x.com?a=1&b=2\n');
   });
 });
 
@@ -71,5 +82,12 @@ describe('sortFiles', () => {
     expect(results[1].changed).toBe(false);
     fs.unlinkSync(f1);
     fs.unlinkSync(f2);
+  });
+
+  test('returns file path in each result', () => {
+    const file = writeTempEnv('A=1\n');
+    const results = sortFiles([file]);
+    expect(results[0].file).toBe(file);
+    fs.unlinkSync(file);
   });
 });
