@@ -26,9 +26,14 @@ function buildTemplate(envMaps, opts = {}) {
 
 /**
  * Write template content to a file path.
+ * Throws a descriptive error if the write fails.
  */
 function writeTemplate(outputPath, content) {
-  fs.writeFileSync(outputPath, content, 'utf8');
+  try {
+    fs.writeFileSync(outputPath, content, 'utf8');
+  } catch (err) {
+    throw new Error(`Failed to write template to "${outputPath}": ${err.message}`);
+  }
 }
 
 /**
